@@ -1,65 +1,54 @@
-'use strict';
-
 /*
 Formats the given number using `Number#toLocaleString`.
-- If locale is a string, the value is expected to be a locale-key (for example: `de`).
-- If locale is true, the system default locale is used for translation.
-- If no value for locale is specified, the number is returned unmodified.
+- If loc is a string, the value is expected to be a loc-key (for example: `de`).
+- If loc is true, the system default loc is used for translation.
+- If no value for loc is specified, the number is returned unmodified.
 */
-const toLocaleString = (number, locale, options) => {
-	if (typeof locale === 'string' || Array.isArray(locale)) {
-		return number.toLocaleString(locale, options);
-	} else if (locale === true || Object.keys(options).length) {
-		return number.toLocaleString(undefined, options);
+let toLocaleString = (num, loc, opts) => {
+	if (typeof loc === 'string' || Array.isArray(loc))
+		return num.toLocaleString(loc, opts)
+	else if (loc === true || Object.keys(opts).length)
+	    return num.toLocaleString(undefined, opts)
+	return num
+}
+
+module.exports = (num, opts) => {
+	if (!Number.isFinite(num))
+		throw new TypeError(`Expected a finite num, got ${typeof num}: ${num}`)
+
+	opts = Object.assign({bits: false, binary: false}, opts)
+
+	let UNITS = `${opts.bits ? 'b' : 'B'}${opts.binary ? 'K' : 'k'}MGTPEZY`
+
+	if (opts.signed && num === 0)
+		return ` 0 ${UNITS[0]}`
+
+	let prefix = num < 0 ? '-' : (opts.signed ? '+' : '')
+	num = Math.abs(num)
+
+	let locOpts = Object.fromEntries(
+		Object.entries(opts).filter(([k, _]) => k.includes('ionDig'))
+	)
+
+	if (num < 1) {
+		let numStr = toLocaleString(num, opts.loc, locOpts)
+		return `${prefix}${numStr} ${UNITS[0]}`
 	}
 
-	return number;
-};
+	let exp = Math.min(
+		Math.floor(opts.binary ? Math.log(num) / Math.log(1024) : Math.log10(num) / 3 /* log(1000) */),
+		UNITS.length - 1)
+	num /= Math.pow(opts.binary ? 1024 : 1000, exp)
 
-module.exports = (number, options) => {
-	if (!Number.isFinite(number)) {
-		throw new TypeError(`Expected a finite number, got ${typeof number}: ${number}`);
+	if (!Object.keys(locOpts).length)
+		num = num.toPrecision(3)
+
+	let postfix = UNITS[exp]
+	if (exp > 0) {
+		postfix += opts.binary ? 'i' : ''
+		postfix += opts.bits ? 'bit' : 'B'
 	}
 
-	options = Object.assign({bits: false, binary: false}, options);
-
-	const UNITS_FIRSTLETTER = (options.bits ? 'b' : 'B') + 'kMGTPEZY';
-
-	if (options.signed && number === 0) {
-		return ` 0 ${UNITS_FIRSTLETTER[0]}`;
-	}
-
-	const prefix = number < 0 ? '-' : (options.signed ? '+' : '');
-	number = Math.abs(number);
-
-	const localeOptions = Object.fromEntries(
-		Object.entries(options)
-		.filter(([k, _]) => k.includes('FractionDigits'))
-	);
-
-	if (number < 1) {
-		const numberString = toLocaleString(number, options.locale, localeOptions);
-		return prefix + numberString + ' ' + UNITS_FIRSTLETTER[0];
-	}
-
-	const exponent = Math.min(
-		Math.floor(options.binary ? Math.log(number) / Math.log(1024) : Math.log10(number) / 3),
-		UNITS_FIRSTLETTER.length - 1
-	);
-	// eslint-disable-next-line unicorn/prefer-exponentiation-operator
-	number /= Math.pow(options.binary ? 1024 : 1000, exponent);
-
-	if (!Object.keys(localeOptions).length) {
-		number = number.toPrecision(3);
-	}
-
-	const numberString = toLocaleString(Number(number), options.locale, localeOptions);
-
-	let unit = UNITS_FIRSTLETTER[exponent];
-	if (exponent > 0) {
-		unit += options.binary ? 'i' : '';
-		unit += options.bits ? 'bit' : 'B';
-	}
-
-	return prefix + numberString + ' ' + unit;
-};
+	let numStr = toLocaleString(Number(num), opts.loc, locOpts)
+	return `${prefix}${numStr} ${postfix}`
+}

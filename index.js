@@ -36,7 +36,7 @@ module.exports = (num, opts) => {
     }
 
     let exp = Math.min(
-        Math.floor(opts.binary ? Math.log(num) / Math.log(1024) : Math.log10(num) / 3 /* log(1000) */),
+        Math.floor(opts.binary ? Math.log(num) / Math.log(1024) : Math.log10(num) / 3 /* log10(1000) */),
         UNITS.length - 1)
     num /= Math.pow(opts.binary ? 1024 : 1000, exp)
 

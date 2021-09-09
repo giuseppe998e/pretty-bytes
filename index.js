@@ -1,4 +1,4 @@
-let Obj = Object
+let _Object = Object, _Math = Math, _Number = Number
 
 /*
 Formats the given number using `Number#toLocaleString`.
@@ -9,37 +9,37 @@ Formats the given number using `Number#toLocaleString`.
 let toLocaleString = (num, loc, opts) => {
     if (typeof loc == 'string' || Array.isArray(loc))
         return num.toLocaleString(loc, opts)
-    if (loc == true || Obj.keys(opts).length)
+    if (loc == true || _Object.keys(opts).length)
         return num.toLocaleString(undefined, opts)
     return num
 }
 
 module.exports = (num, opts) => {
-    if (!Number.isFinite(num))
+    if (!_Number.isFinite(num))
         throw new TypeError(`Expected a finite num, got ${typeof num}: ${num}`)
 
-    opts = Obj.assign({bits: false, binary: false}, opts)
+    opts = _Object.assign({bits: false, binary: false}, opts)
 
 	let bitByteUnit = opts.bits ? 'bit' : 'B'
 
     if (opts.signed && !num) // num == 0
         return ` 0 ${bitByteUnit[0]}`
 
-	let binSiKilo = 'k', binPostfix = '', log = Math.log10, valUnit = 1000
+	let binSiKilo = 'k', binPostfix = '', log = _Math.log10, valUnit = 1000
 	if (opts.binary) {
 		binSiKilo = 'K'
 		binPostfix = 'i'
-		log = Math.log
+		log = _Math.log
 		valUnit += 24
 	}
 
     let UNITS = `${bitByteUnit[0]}${binSiKilo}MGTPEZY`
 
     let prefix = num < 0 ? '-' : (opts.signed ? '+' : '')
-    num = Math.abs(num)
+    num = _Math.abs(num)
 
-    let locOpts = Obj.fromEntries(
-        Obj.entries(opts).filter(e => e[0].includes('ionDig'))
+    let locOpts = _Object.fromEntries(
+        _Object.entries(opts).filter(e => e[0].includes('ionDig'))
     )
 
     if (num < 1) {
@@ -47,16 +47,16 @@ module.exports = (num, opts) => {
         return `${prefix}${numStr} ${UNITS[0]}`
     }
 
-    let exp = Math.min(Math.floor(log(num) / log(valUnit)), UNITS.length - 1)
-    num /= Math.pow(valUnit, exp)
+    let exp = _Math.min(_Math.floor(log(num) / log(valUnit)), UNITS.length - 1)
+    num /= _Math.pow(valUnit, exp)
 
-    if (!Obj.keys(locOpts).length)
+    if (!_Object.keys(locOpts).length)
         num = num.toPrecision(3)
 
     let postfix = UNITS[exp]
     if (exp) // exp > 0
         postfix += binPostfix + bitByteUnit
 
-    let numStr = toLocaleString(Number(num), opts.locale, locOpts)
+    let numStr = toLocaleString(_Number(num), opts.locale, locOpts)
     return `${prefix}${numStr} ${postfix}`
 }
